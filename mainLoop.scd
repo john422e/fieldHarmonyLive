@@ -1,7 +1,10 @@
 /*
-a template for live intonation pieces
-runs with python server analyzeSample.py with Allen Downey's thinkdsp modules
+a template for live intonation pieces.
+runs with python server analyzeSample.py with Allen Downey's thinkdsp modules.
+it's essentially just a pitch tracker for now without further spectral processing.
 --john eagle, august 2022
+
+TO RUN: add code blocks 1-3, then run analyzeSample.py from terminal, then run code block 5
 */
 
 // 1. DEFINE FUNCTIONS
