@@ -19,44 +19,46 @@ TO RUN: add code blocks 1-3, then run analyzeSample.py from terminal, then run c
 
 // 2. SET UP SOUND STUFF
 (
-s.boot; // boot server
-// ADD SYNTHS TO SERVER
+s.waitForBoot( { // boot server
+	// ADD SYNTHS TO SERVER
 
-// Mic Synth for input only
-SynthDef.new( \micIn, {
-	arg in=0, inputGain=1.0, out=0;
-	var sig;
-	sig = SoundIn.ar(in, inputGain);
-	out = Out.ar(out, sig);
-}).add;
+	// Mic Synth for input only
+	SynthDef.new( \micIn, {
+		arg in=0, inputGain=1.0, out=0;
+		var sig;
+		sig = SoundIn.ar(in, inputGain);
+		out = Out.ar(out, sig);
+	}).add;
 
-// sine bank synth
-SynthDef.new(\sinBank8, {
-	arg iphase=0, width=0.5, pulse=0;
-	var size=8, env, sig, freqs, amps, phases, time=0.05;
-	freqs = Array.fill(size, { 440 } );
-	amps = Array.fill(size, { 1/size } );
-	phases = Array.fill(size, { arg i; i.mod(2pi) } );
-	// amp env
-	env = EnvGen.kr( Env.asr(0.01, 1.0, 0.01), \gate.kr(0));
-	// signal
-	sig = DynKlang.ar( `[ \freqs.kr(freqs), \amps.kr(amps), \phases.kr(phases) ] );
-	// EQ
-	//sig = BLowShelf.ar(sig, 100, 1.0, 3);
-	//sig = BHiShelf.ar(sig, 200, rs: 0.5, db: -2);
-	//sig = BHiShelf.ar(sig, 300, rs: 0.1, db: -2);
-	//sig = BHiShelf.ar(sig, 400, rs: 0.1, db: -1);
-	//sig = BHiShelf.ar(sig, 600, rs: 0.2, db: -3);
+	// sine bank synth
+	SynthDef.new(\sinBank8, {
+		arg iphase=0, width=0.5, pulse=0;
+		var size=8, env, sig, freqs, amps, phases, time=0.05;
+		freqs = Array.fill(size, { 440 } );
+		amps = Array.fill(size, { 1/size } );
+		phases = Array.fill(size, { arg i; i.mod(2pi) } );
+		// amp env
+		env = EnvGen.kr( Env.asr(0.01, 1.0, 0.01), \gate.kr(0));
+		// signal
+		sig = DynKlang.ar( `[ \freqs.kr(freqs), \amps.kr(amps), \phases.kr(phases) ] );
+		// EQ
+		//sig = BLowShelf.ar(sig, 100, 1.0, 3);
+		//sig = BHiShelf.ar(sig, 200, rs: 0.5, db: -2);
+		//sig = BHiShelf.ar(sig, 300, rs: 0.1, db: -2);
+		//sig = BHiShelf.ar(sig, 400, rs: 0.1, db: -1);
+		//sig = BHiShelf.ar(sig, 600, rs: 0.2, db: -3);
 
-	sig = Pan2.ar(sig, \pan.kr(0), \amp.kr(0.1)) * env;
-	Out.ar(\out.kr(0), sig);
-}).add;
+		sig = Pan2.ar(sig, \pan.kr(0), \amp.kr(0.1)) * env;
+		Out.ar(\out.kr(0), sig);
+	}).add;
 
-// allocate bus and instance of mic synth and sine synth
-~micBus = Bus.audio(s, 1);
-~micIn = Synth.new(\micIn, [\out, ~micBus]);
-~micBus.scope;
-~sines = Synth.new(\sinBank8);
+	s.sync;
+	// allocate bus and instance of mic synth and sine synth
+	~micBus = Bus.audio(s, 1);
+	~micIn = Synth.new(\micIn, [\out, ~micBus]);
+	~micBus.scope;
+	~sines = Synth.new(\sinBank8);
+});
 )
 
 // 3. SET UP OSC STUFF
