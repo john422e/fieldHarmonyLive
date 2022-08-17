@@ -33,9 +33,10 @@ params = {
 'sample duration': 10,
 'playback duration': 10, # If not None, will set duration of .wav files created, else it is equal to 'sample duration'
 'start time': 0,
-'high pass': 50,
+'high pass': 100,
 'low pass': 10000,
-'hz boundary': 0.005, # 5% .005, # 0.5%
+'hz boundary': 0.05, # 5% .005, # 0.5%
+'clear harmonics': [1, 2, 4, 8, 16], # harmonics of frequency to filter for
 'total peaks': 0,
 # harmonic analysis params
 'denominator limit': 128, # resolution

@@ -19,8 +19,8 @@ TO RUN: add code blocks 1-4, then run analyzeSample.py from terminal, then run c
 
 // 2. GET DURATIONS FROM PYTHON SCRIPT form_functions.py
 (
-//var p, l, cwd, pyFile, numSections=20, duration=10, power=0.6;
-var p, l, cwd, pyFile, numSections=10, duration=1, power=0.6; // for testing
+var p, l, cwd, pyFile, numSections=20, duration=10, power=0.6;
+//var p, l, cwd, pyFile, numSections=10, duration=1, power=0.6; // for testing
 
 cwd = PathName.new(thisProcess.nowExecutingPath).parentPath;
 pyFile = cwd ++ "form_functions.py";
@@ -56,7 +56,7 @@ s.waitForBoot( { // boot server
 
 	// sine bank synth
 	SynthDef.new(\sinBank8, {
-		arg iphase=0, width=0.5, pulse=0;
+		arg iphase=0, width=0.5, pulse=0, out=0;
 		var size=8, env, sig, freqs, amps, phases;
 
 		freqs = Array.fill(size, { 440 } );
@@ -80,7 +80,7 @@ s.waitForBoot( { // boot server
 		//sig = BHiShelf.ar(sig, 600, rs: 0.2, db: -3);
 
 		sig = Pan2.ar(sig, \pan.kr(0), \amp.kr(0.1)) * env;
-		Out.ar(\out.kr(0), sig);
+		Out.ar(out, sig);
 	}).add;
 
 	s.sync;
@@ -91,7 +91,8 @@ s.waitForBoot( { // boot server
 	//~micIn = Synth.new(\micIn, [\in1, 0, \in2, 0, \out1, ~micBus1, \out2, ~micBus2]); // mono input
 	~micBus1.scope;
 	~micBus2.scope;
-	~sines = Synth.new(\sinBank8);
+	~sines1 = Synth.new(\sinBank8, [\out, 0]);
+	~sines2 = Synth.new(\sinBank8, [\out, 1]);
 });
 )
 
@@ -103,34 +104,53 @@ OSCdef.new(
 	// function to be evaluated upon receiving qualifying OSC message
 	{
 		arg msg, time, addr, port; // these are the messages passed on
-		var rawRcvd, amps, freqs;
+		var cleaned, midpoint, l1, l2;
 		[msg, time, addr, port].postln; // action to be executed
-		msg.removeAt(0);
-		// make separate lists for amp vals and freq vals
-		~amps = Array.new(msg.size/2);
-		~freqs = Array.new(msg.size/2);
-		// separate msg into the two lists
-		msg.do( {
+		msg.removeAt(0); // get rid of tag beginning
+		["RCVD:", msg].postln;
+		// clean list of strings
+		cleaned = msg.select( { arg i; i.isNumber });
+		// cut list in two
+		midpoint = (cleaned.size/2).asInteger;
+		l1 = cleaned[..(midpoint-1)];
+		l2 = cleaned[midpoint..cleaned.size];
+		// now we have 2 lists of [amp, freq, amp, freq...]
+		// make separate lists for amp vals and freq vals\
+
+		// L1
+		~amps1 = Array.new(l1.size/2);
+		~freqs1 = Array.new(l1.size/2);
+		l1.do( {
 			arg val, i;
 			[val, i].postln;
-			if( i % 2 == 0, { ~amps.add(val) }, { ~freqs.add(val) });
+			if( i % 2 == 0, { ~amps1.add(val) }, { ~freqs1.add(val) });
 		});
-		~amps = ~amps.normalizeSum();
+		~amps1 = ~amps1.normalizeSum();
+		//~amps1 = Array.fill(8, {1.0/8});
 
-		["RECEIVED", msg.size].postln;
-		~amps.postln;
-		~freqs.postln;
-		//~amps.sum.postln;
+		// L2
+		~amps2 = Array.new(l2.size/2);
+		~freqs2 = Array.new(l2.size/2);
+		l2.do( {
+			arg val, i;
+			[val, i].postln;
+			if( i % 2 == 0, { ~amps2.add(val) }, { ~freqs2.add(val) });
+		});
+		~amps2 = ~amps2.normalizeSum();
+		//~amps2 = Array.fill(8, {1.0/8});
+
+		//~amps1.sum.postln;
 	},
 	'/freqs',
 	recvPort: 10001
 );
 )
 
+
 // 5. START PYTHON SERVER IN TERMINAL BHY_analyzeSample.py
 
-~sections.postln;
-~sections.do( { arg i; i.postln;});
+
+
 // 6. START PROGRAM
 (
 // MAIN
@@ -176,8 +196,10 @@ x = Task{
 		//freqs.postln;
 		pingBufTime.do{ format("GETTING SAMPLE FREQS, TIME:\t\t % minutes, % seconds", (t.beats/60).asInteger, (t.beats%60).asInteger).postln; 1.wait}; // is this necessary?
 		// 4. UPDATE SYNTH
-		~sines.set(\freqs, ~freqs);
-		//~sines.set(\amps, ~amps);
+		~sines1.set(\freqs, ~freqs1);
+		~sines1.set(\amps, ~amps1);
+		~sines2.set(\freqs, ~freqs2);
+		~sines2.set(\amps, ~amps2);
 		// calculate envelope based on length of cycle
 
 		// calculate remaining time left in cycle
@@ -193,9 +215,12 @@ x = Task{
 
 
 		format( "sus %, release %, cycleDur %", sus, release, cycleDur).postln;
-		~sines.set(\sus, sus);
-		~sines.set(\release, release);
-		~sines.set(\gate, 1);
+		~sines1.set(\sus, sus);
+		~sines1.set(\release, release);
+		~sines1.set(\gate, 1);
+		~sines2.set(\sus, sus);
+		~sines2.set(\release, release);
+		~sines2.set(\gate, 1);
 
 		// at this point, sampleDur (2) + recBufTime (1) + pingBufTime (1) seconds have passed
 
@@ -206,7 +231,7 @@ x = Task{
 	// shutdown python server when finished
 	~localHost.sendMsg('/shutdown');
 	// kill synth
-	~sines.set(\gate, 0);
+	~sines2.set(\gate, 0);
 }.start;
 )
 
@@ -215,5 +240,6 @@ x.stop;
 
 s.scope;
 s.freqscope;
-1.do{ 10000.postln; };
-~freqs;
+
+~freqs1;
+~freqs2;
