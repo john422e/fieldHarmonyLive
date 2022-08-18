@@ -9,7 +9,7 @@ TO RUN: add code blocks 1-4, then run analyzeSample.py from terminal, then run c
 
 // 1. DEFINE FUNCTIONS
 (
-~makeLocalHost = {
+~makeHost = {
 	arg hostname = "127.0.0.1", port=10000;
 	var host;
 	host = NetAddr.new( hostname, port);
@@ -159,7 +159,16 @@ var cwd, tempWav1, tempWav2, r1, r2, sampleDur=2.0, recBufTime=1.0, pingBufTime=
 
 // set up local host
 ~localHost = ~localHost.free;
-~localHost = ~makeLocalHost.();
+~localHost = ~makeHost.();
+
+
+// ----------------------------------------------------------------------------
+// set up pi host
+~piHosts = [~makeHost.(hostname: "127.0.0.1", port: 10002)];
+
+~piHosts[0].sendMsg('/stdSynthState', 1, 1); // first into for channel (l/r), second for on/off
+~piHosts[0].sendMsg('/synthFreq', 1, 330.0);
+// ----------------------------------------------------------------------------
 
 cwd = PathName.new(thisProcess.nowExecutingPath).parentPath;
 tempWav1 = cwd ++ "temp1.wav";
@@ -195,7 +204,7 @@ x = Task{
 		~localHost.sendMsg('/ping');
 		//freqs.postln;
 		pingBufTime.do{ format("GETTING SAMPLE FREQS, TIME:\t\t % minutes, % seconds", (t.beats/60).asInteger, (t.beats%60).asInteger).postln; 1.wait}; // is this necessary?
-		// 4. UPDATE SYNTH
+		// 4. UPDATE LOCAL SYNTH
 		~sines1.set(\freqs, ~freqs1);
 		~sines1.set(\amps, ~amps1);
 		~sines2.set(\freqs, ~freqs2);
@@ -223,6 +232,12 @@ x = Task{
 		~sines2.set(\gate, 1);
 
 		// at this point, sampleDur (2) + recBufTime (1) + pingBufTime (1) seconds have passed
+
+		// ----------------------------------------------------------------------------
+		// NOW UPDATE PIS
+
+
+
 
 
 		cycleRemainder.do{ format("TUNING TIME, TIME:\t %:% , NEXT CHANGE: %:%", (t.beats/60).asInteger, (t.beats%60).asInteger, (nextSection/60).asInteger, (nextSection%60).asInteger).postln; 1.wait};
