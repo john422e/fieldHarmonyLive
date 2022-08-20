@@ -10,7 +10,7 @@ me.dir() => string dir;
 // OSC
 OscIn in;
 OscMsg msg;
-9999 => int port;
+10000 => int port;
 port => in.port;
 in.listenAll();
 
@@ -50,13 +50,13 @@ fun void oscListener() {
             if( msg.address == "/synthState" ) {
                 msg.getInt(0) => newState; // msg is 0 or 1
                 if( newState != synthState ) { // only set it and act if it's a change
-                    newState => ternaryState;
-                    if( ternaryState == 1 ) {
+                    newState => synthState;
+                    if( synthState == 1 ) {
                         // add stdSynth.ck to server and assign it an ID
                         Machine.add(dir + "stdSynth.ck") => synthID;
                         <<< "ADDING STD SYNTH", synthID >>>;
                     }
-                    if( ternaryState == 0 ) {
+                    if( synthState == 0 ) {
                         // remove stdSynth.ck from server
                         Machine.remove(synthID);
                         <<< "REMOVING STD SYNTH", synthID >>>;
