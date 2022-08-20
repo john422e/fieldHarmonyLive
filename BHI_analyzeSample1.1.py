@@ -14,8 +14,8 @@ from parameters import params
 fn = sys.argv[0]
 running = True
 localIP = "127.0.0.1"
-rcvPort = 10000
-sendPort = 10001
+rcvPort = 9998
+sendPort = 9999
 pingAddress = "/ping"
 shutdownAddress = "/shutdown"
 sendAddress = "/freqs"

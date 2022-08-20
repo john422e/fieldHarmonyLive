@@ -4,22 +4,81 @@ runs with python server analyzeSample.py with Allen Downey's thinkdsp modules.
 it's essentially just a pitch tracker for now without further spectral processing.
 --john eagle, august 2022
 
-TO RUN: add code blocks 1-4, then run analyzeSample.py from terminal, then run code block 6
+TO RUN: add code blocks 1-4, then run analyzeSample.py from terminal (5), serverMaster.ck from terminal on each pi (6), then run code block 7
 */
 
 // 1. DEFINE FUNCTIONS
 (
+// MAKE SINGLE HOST
 ~makeHost = {
 	arg hostname = "127.0.0.1", port=10000;
 	var host;
 	host = NetAddr.new( hostname, port);
 	host;
 };
+// MAKE HOST ARRAY
+~makeHosts = {
+	arg hostnames, port=10000;
+	var hosts;
+	hosts = Array.fill( hostnames.size, { arg i; NetAddr.new( hostnames[i], port)});
+	hosts;
+};
+
+// start python sensor program
+~sensorInit = {
+	arg hostsMaster, hostsParams;
+	var delayTime = 1.0;
+	Task {
+		// 1. add sensorSender.ck to remote server
+		hostsMaster.do( {
+			arg host;
+			host.sendMsg( '/sensorState', 1);
+		});
+		// delay
+		(delayTime + 1).wait; // allow extra time for sensorSender startup
+		// 2. initiate sensors (to sensor program)
+		hostsParams.do( {
+			arg host;
+			host.sendMsg( '/sensorInit');
+		});
+	}.start;
+};
+
+// exit python sensor program
+~sensorShutdown = {
+	arg hostsMaster, hostsParams;
+	var delayTime = 1.0;
+	Task {
+		// 1. shutdown sensors (to sensor program)
+		hostsParams.do( {
+		arg host;
+		host.sendMsg( '/sensorShutdown');
+		});
+
+		// delay
+		~delayTime.wait;
+
+		// 2. remove sensorSender.ck to remote server
+		hostsMaster.do( {
+			arg host;
+			host.sendMsg( '/sensorState', 0);
+		});
+	}.start;
+};
+
+// exits remote chuck server
+~shutdownRemoteServer = {
+	arg hosts
+	hosts.do( {
+		arg host;
+		host.sendMsg( '/endProgram');
+	});
+};
 )
 
 // 2. GET DURATIONS FROM PYTHON SCRIPT form_functions.py
 (
-var p, l, cwd, pyFile, numSections=20, duration=10, power=0.6;
+var p, l, cwd, pyFile, numSections=20, duration=10, power=0.6;  // ADJUST VARS HERE FOR FORM
 //var p, l, cwd, pyFile, numSections=10, duration=1, power=0.6; // for testing
 
 cwd = PathName.new(thisProcess.nowExecutingPath).parentPath;
@@ -40,7 +99,8 @@ p.close;
 ServerOptions.devices;
 Server.default.options.inDevice_("H5"); // stereo input
 //Server.default.options.inDevice_("MacBook Pro Microphone"); // mono input
-Server.default.options.outDevice_("External Headphones");
+//Server.default.options.outDevice_("External Headphones");
+Server.default.options.outDevice_("Scarlett 2i2 USB");
 
 s.waitForBoot( { // boot server
 	// ADD SYNTHS TO SERVER
@@ -98,7 +158,30 @@ s.waitForBoot( { // boot server
 
 // 4. SET UP OSC STUFF
 (
+/*PORTS:
+to/from local host: 9998/9999
+to pis: 10000 (on/off), 10001 (control messages: /freq, /gain, /distance)
+*/
+
 OSCdef.freeAll;
+
+// set up local host
+~localHost = ~localHost.free;
+~localHost = ~makeHost.(port: 9998);
+
+~hostnames = ["pione.local", "pitwo.local"];
+~hostsMaster = ~makeHosts.(~hostnames, 9999); // for adding/removing synths from remote servers
+~hostsParams = ~makeHosts.(~hostnames, 10000); // for setting params on remote synths
+
+
+
+
+
+// ----------------------------------------------------------------------------
+// set up pi hosts
+~piHosts = [~makeHost.(hostname: "pione.local", port: 10002)]; // just one for now
+
+
 OSCdef.new(
 	\recvFreqs,
 	// function to be evaluated upon receiving qualifying OSC message
@@ -142,32 +225,28 @@ OSCdef.new(
 		//~amps1.sum.postln;
 	},
 	'/freqs',
-	recvPort: 10001
+	recvPort: 9999
 );
 )
 
 
 // 5. START PYTHON SERVER IN TERMINAL BHY_analyzeSample.py
 
+// 6. START PI SERVERS IN TERMINAL serverMaster.ck
 
+// 7. START UP PIs: sensorSender.ck and stdSynth.ck
+(
 
-// 6. START PROGRAM
+)
+
+// 7. START PROGRAM
 (
 // MAIN
 var cwd, tempWav1, tempWav2, r1, r2, sampleDur=2.0, recBufTime=1.0, pingBufTime=1.0, cycleRemainder, totalFreqs=8;
 
 
-// set up local host
-~localHost = ~localHost.free;
-~localHost = ~makeHost.();
 
 
-// ----------------------------------------------------------------------------
-// set up pi host
-~piHosts = [~makeHost.(hostname: "127.0.0.1", port: 10002)];
-
-~piHosts[0].sendMsg('/stdSynthState', 1, 1); // first into for channel (l/r), second for on/off
-~piHosts[0].sendMsg('/synthFreq', 1, 330.0);
 // ----------------------------------------------------------------------------
 
 cwd = PathName.new(thisProcess.nowExecutingPath).parentPath;
@@ -235,7 +314,14 @@ x = Task{
 
 		// ----------------------------------------------------------------------------
 		// NOW UPDATE PIS
-
+		// make sure it's on
+		~piHosts[0].sendMsg('/stdSynthState', 0, 1); // first into for channel (l/r), second for on/off
+		//~piHosts[0].sendMsg('/stdSynthState', 0, 0);
+		// set freq
+		~piHosts[0].sendMsg('/synthFreq', 0, ~freqs1.choose); // random choice for now
+		// full gain for now without sensor
+		//~piHosts[0].sendMsg('/synthGain', 0, 0.0);
+		~piHosts[0].sendMsg('/synthGain', 0, 0.8);
 
 
 
@@ -246,12 +332,16 @@ x = Task{
 	// shutdown python server when finished
 	~localHost.sendMsg('/shutdown');
 	// kill synth
+	~sines1.set(\gate, 0);
 	~sines2.set(\gate, 0);
 }.start;
 )
 
 // USE THIS FOR STOPPING
 x.stop;
+
+// EMERGENCY OFF
+~piHosts[0].sendMsg('/synthGain', 0, 0.0);
 
 s.scope;
 s.freqscope;
