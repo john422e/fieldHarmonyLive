@@ -154,7 +154,7 @@ fun void oscListener() {
         if( synthStates[0] == 1 || synthStates[1] == 1 ) {
             // all messages should have an address for event type
             // first arg should always be an int (0 or 1) specifying synth, except for /distance
-            //<<< "stdSynth.ck", msg.address >>>;
+            <<< "stdSynth.ck", msg.address >>>;
             
             // individual synth on/off
             if( msg.address == "/synthOn") synthEnvs[synth].keyOn();
