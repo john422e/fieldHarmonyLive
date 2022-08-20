@@ -28,8 +28,6 @@ fun void oscListener() {
         in => now; // wait for message
         while( in.recv(msg) ) {
             
-            <<< "RECEIVED", msg >>>; // testing
-            
             // SENSOR PROGRAM
             if( msg.address == "/sensorState" ) {
                 msg.getInt(0) => newState; // msg is 0 or 1

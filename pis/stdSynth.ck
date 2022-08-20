@@ -19,7 +19,7 @@ int synth;
 OscIn in;
 OscMsg msg;
 
-10000 => int IN_PORT;
+10001 => int IN_PORT;
 IN_PORT => in.port;
 in.listenAll();
 
