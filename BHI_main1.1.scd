@@ -7,74 +7,8 @@ it's essentially just a pitch tracker for now without further spectral processin
 TO RUN: add code blocks 1-4, then run analyzeSample.py from terminal (5), serverMaster.ck from terminal on each pi (6), then run code block 7
 */
 
-// 1. DEFINE FUNCTIONS
-(
-// MAKE SINGLE HOST
-~makeHost = {
-	arg hostname = "127.0.0.1", port=10000;
-	var host;
-	host = NetAddr.new( hostname, port);
-	host;
-};
-// MAKE HOST ARRAY
-~makeHosts = {
-	arg hostnames, port=10000;
-	var hosts;
-	hosts = Array.fill( hostnames.size, { arg i; NetAddr.new( hostnames[i], port)});
-	hosts;
-};
+// 1. LOAD FUNCTIONS (functions.scd)
 
-// start python sensor program
-~sensorInit = {
-	arg hostsMaster, hostsParams;
-	var delayTime = 1.0;
-	Task {
-		// 1. add sensorSender.ck to remote server
-		hostsMaster.do( {
-			arg host;
-			host.sendMsg( '/sensorState', 1);
-		});
-		// delay
-		(delayTime + 1).wait; // allow extra time for sensorSender startup
-		// 2. initiate sensors (to sensor program)
-		hostsParams.do( {
-			arg host;
-			host.sendMsg( '/sensorInit');
-		});
-	}.start;
-};
-
-// exit python sensor program
-~sensorShutdown = {
-	arg hostsMaster, hostsParams;
-	var delayTime = 1.0;
-	Task {
-		// 1. shutdown sensors (to sensor program)
-		hostsParams.do( {
-		arg host;
-		host.sendMsg( '/sensorShutdown');
-		});
-
-		// delay
-		~delayTime.wait;
-
-		// 2. remove sensorSender.ck to remote server
-		hostsMaster.do( {
-			arg host;
-			host.sendMsg( '/sensorState', 0);
-		});
-	}.start;
-};
-
-// exits remote chuck server
-~shutdownRemoteServer = {
-	arg hosts
-	hosts.do( {
-		arg host;
-		host.sendMsg( '/endProgram');
-	});
-};
-)
 
 // 2. GET DURATIONS FROM PYTHON SCRIPT form_functions.py
 (
@@ -170,12 +104,8 @@ OSCdef.freeAll;
 ~localHost = ~makeHost.(port: 9998);
 
 ~hostnames = ["pione.local", "pitwo.local"];
-~hostsMaster = ~makeHosts.(~hostnames, 9999); // for adding/removing synths from remote servers
-~hostsParams = ~makeHosts.(~hostnames, 10000); // for setting params on remote synths
-
-
-
-
+~hostsMaster = ~makeHosts.(~hostnames, 10000); // for adding/removing synths from remote servers
+~hostsParams = ~makeHosts.(~hostnames, 10001); // for setting params on remote synths
 
 // ----------------------------------------------------------------------------
 // set up pi hosts
@@ -234,12 +164,47 @@ OSCdef.new(
 
 // 6. START PI SERVERS IN TERMINAL serverMaster.ck
 
+
+
+
+
+
+
+
 // 7. START UP PIs: sensorSender.ck and stdSynth.ck
 (
-
+// start up sensor programs
+~sensorInit.(~hostsMaster, ~hostsParams);
 )
 
-// 7. START PROGRAM
+(
+// start up synth programs
+~stdSynthSwitch.(~hostsMaster);
+);
+
+(
+// initiate synth settings
+~setStdSynth.(~hostsParams, "/stdSynthState", 0, 1); // turn on chan 1
+)
+
+// not sure if i need this stuff
+~pingSensors.();
+~setStdSynth.(~hostsParams, "/synthFreq", 0, 133.0);
+
+// SHUT IT DOWN
+~stdSynthSwitch.(~hostsMaster, state: 0);
+~sensorShutdown.(~hostsMaster, ~hostsParams);
+~shutdownRemoteServer.(~hostsMaster);
+
+
+
+
+
+
+
+
+
+// 8. START PROGRAM
 (
 // MAIN
 var cwd, tempWav1, tempWav2, r1, r2, sampleDur=2.0, recBufTime=1.0, pingBufTime=1.0, cycleRemainder, totalFreqs=8;
