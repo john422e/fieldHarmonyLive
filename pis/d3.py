@@ -16,7 +16,7 @@ import RPi.GPIO as GPIO
 fn = "d3.py"
 running = True
 localIP = "127.0.0.1"
-sendPort = 10000
+sendPort = 10001
 rcvPort = 5000
 pingAddress = "/setPing"
 shutdownAddress = "/shutdown"

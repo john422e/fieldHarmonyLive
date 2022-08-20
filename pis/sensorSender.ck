@@ -22,7 +22,7 @@ Std.system("pkill python3");
 
 // ports
 5000 => int OUT_PORT;
-10000 => int IN_PORT;
+10001 => int IN_PORT;
 
 OscOut out;
 OscIn in;
