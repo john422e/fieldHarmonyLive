@@ -133,6 +133,7 @@ fun void setAmpFromDistance(float dist) {
         }
     }
     
+    /*
     // RANGE 2: set to freq2 and set amp if value between thresh1 and thresh2
     else if( dist > thresh1 && dist < thresh2 ) {
         normalize(dist, thresh1+midBuffer, thresh2) => amp;
@@ -164,6 +165,7 @@ fun void setAmpFromDistance(float dist) {
             else synthEnvs[i].keyOff(); // turn off
         }
     }
+    */
     
     else { // go to min amp val
         for( 0 => int i; i < numSynths; i++ ) {
