@@ -46,6 +46,9 @@ for( 0 => int i; i < numSynths; i++ ) {
     1 => synths[i].harmonics;
     220.0 => freqs1[i];
     330.0 => freqs2[i];
+    // set ramp time
+    0.5 => synthEnvs[i].time;
+    // sound chain
     synths[i] => synthEnvs[i] => dac.chan(i);
 }
 
@@ -129,7 +132,7 @@ fun void setAmpFromDistance(float dist) {
         
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1) {
-                <<< fn, "RANGE 1", freqs2[i], amp >>>;
+                <<< fn, "RANGE 2", freqs2[i], amp >>>;
                 amp => synthEnvs[i].target;
                 freqs2[i] => synths[i].freq;
                 spork ~ synthEnvs[i].keyOn();
@@ -138,6 +141,18 @@ fun void setAmpFromDistance(float dist) {
         }
     }
     
+    // give a little head room for range 2
+    else if( dist > thresh2 && < (thresh2+20) {
+        1.0 => amp;
+        for( 0 => int i; i < numSynths; i++ ) {
+            if( synthStates[i] == 1) {
+                <<< fn, "RANGE 3", freqs2[i], amp >>>;
+                amp => synthEnvs[i].target;
+                freqs2[i] => synths[i].freq;
+                spork ~ synthEnvs[i].keyOn();
+            }
+            else synthEnvs[i].keyOff(); // turn off
+        }
     else { // go to min amp val
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1 ) {
