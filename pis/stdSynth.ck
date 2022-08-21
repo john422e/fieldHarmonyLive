@@ -106,10 +106,7 @@ fun void setAmpFromDistance(float dist) {
     sensorRange + thresh1 + midBuffer => float thresh2;
 
     float amp;
-    
-    30 => int distSmoother; // val to feed normalize because minAmp is > 0
-    
-    
+     
     // RANGE 1: set to freq1 and set amp if value between 0 and thresh1
     if( dist < thresh1 && dist > 0.0 ) {
         normalize(dist, thresh1, distOffset) => amp;
@@ -195,6 +192,8 @@ fun void oscListener() {
         
         // distOffset
         if( msg.address == "/distOffset" ) msg.getFloat(0) => distOffset;
+        // sensorRange
+        if( msg.address == "/sensorRange" ) msg.getFloat(0) => sensorRange;
         
         // ONLY CHECK IF SYNTH STATE IS ON
         if( synthStates[0] == 1 || synthStates[1] == 1 ) {
