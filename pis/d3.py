@@ -27,7 +27,7 @@ step = 1
 TRIG = 23
 ECHO = 24
 
-pingInterval = 0.125 # in seconds
+pingInterval = 0.5 # in seconds
 pingState = 0
 
 def setPing(newPingState):
