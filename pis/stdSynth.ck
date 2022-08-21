@@ -99,11 +99,14 @@ fun void setSynthGain( float amp, int synthNum ) {
 
 fun void setAmpFromDistance(float dist) {
     // distOffset in globals can set for each sensor if irregularities too much
-    <<< "stdSynth.ck /distance", dist >>>;
+    
+    sensorRange + distOffset => float thresh1; // where to cut off freq1
+    sensorRange + thresh1 + midBuffer => float thresh2; // where to cut off freq2
+    
+    <<< "stdSynth.ck /distance", dist, "RANGE 1:", distOffset, thresh1, "RANGE 2:", thresh1+midBuffer, thresh2, "RANGE 3:", thresh2, thresh2+20 >>>;
     // sensor vars
     
-    sensorRange + distOffset => float thresh1;
-    sensorRange + thresh1 + midBuffer => float thresh2;
+
 
     float amp;
      
@@ -199,7 +202,7 @@ fun void oscListener() {
         if( synthStates[0] == 1 || synthStates[1] == 1 ) {
             // all messages should have an address for event type
             // first arg should always be an int (0 or 1) specifying synth, except for /distance
-            <<< "stdSynth.ck", msg.address >>>;
+            //<<< "stdSynth.ck", msg.address >>>;
             
             // individual synth on/off
             if( msg.address == "/synthOn") synthEnvs[synth].keyOn();
