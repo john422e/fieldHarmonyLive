@@ -95,8 +95,8 @@ fun void setAmpFromDistance(float dist) {
     <<< "stdSynth.ck /distance", dist >>>;
     // sensor vars
     
-    20.0 => float thresh1;
-    40.0 => float thresh2;
+    15.0 => float thresh1;
+    30.0 => float thresh2;
     10.0 => float distOffset; // can set for each sensor if irregularities too much
     float amp;
     
@@ -105,7 +105,7 @@ fun void setAmpFromDistance(float dist) {
     
     // RANGE 1: set to freq1 and set amp if value between 0 and thresh1
     if( dist < thresh1 && dist > 0.0 ) {
-        normalize(dist, thresh1+distSmoother, distOffset) => amp;
+        normalize(dist, thresh1, distOffset) => amp;
         <<< fn, "sensorAmp", amp >>>;
         // no synthNum comes in here, so have to check manually
         for( 0 => int i; i < numSynths; i++ ) {
