@@ -92,7 +92,7 @@ fun void setSynthGain( float amp, int synthNum ) {
 }
 
 fun void setAmpFromDistance(float dist) {
-    //<<< "stdSynth.ck /distance", dist >>>;
+    <<< "stdSynth.ck /distance", dist >>>;
     // sensor vars
     
     50.0 => float thresh1;
