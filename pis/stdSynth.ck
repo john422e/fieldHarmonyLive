@@ -13,6 +13,8 @@ for Baldwin Hills Intonation, August/September 2022
 int synth;
 0.0 => float minAmp; // for sound level when NOT boosted with sensor
 10.0 => float distOffset;
+5.0 => float midBuffer; // leave a dead zone between the 2 sensor ranges
+10.0 => float sensorRange; // area to be sensitive for each freq
 
 // -----------------------------------------------------------------------------
 // OSC
@@ -97,8 +99,8 @@ fun void setAmpFromDistance(float dist) {
     <<< "stdSynth.ck /distance", dist >>>;
     // sensor vars
     
-    5.0 + distOffset => float thresh1;
-    10.0 + distOffset => float thresh2;
+    sensorRange + distOffset => float thresh1;
+    sensorRange + thresh1 + midBuffer => float thresh2;
 
     float amp;
     
@@ -112,7 +114,7 @@ fun void setAmpFromDistance(float dist) {
         // no synthNum comes in here, so have to check manually
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1 ) {
-                <<< fn, "sensorAmp", freqs1[i], amp >>>;
+                <<< fn, "RANGE 1", freqs1[i], amp >>>;
                 amp => synthEnvs[i].target;
                 freqs1[i] => synths[i].freq;
                 spork ~ synthEnvs[i].keyOn();
@@ -123,11 +125,11 @@ fun void setAmpFromDistance(float dist) {
     
     // RANGE 2: set to freq2 and set amp if value between thresh1 and thresh2
     else if( dist > thresh1 && dist < thresh2 ) {
-        normalize(dist, thresh1, thresh2) => amp;
+        normalize(dist, thresh1+midBuffer, thresh2) => amp;
         
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1) {
-                <<< fn, "sensorAmp", freqs2[i], amp >>>;
+                <<< fn, "RANGE 1", freqs2[i], amp >>>;
                 amp => synthEnvs[i].target;
                 freqs2[i] => synths[i].freq;
                 spork ~ synthEnvs[i].keyOn();
