@@ -15,6 +15,8 @@ int synth;
 10.0 => float distOffset;
 5.0 => float midBuffer; // leave a dead zone between the 2 sensor ranges
 10.0 => float sensorRange; // area to be sensitive for each freq
+float thresh1;
+float thresh2;
 
 // -----------------------------------------------------------------------------
 // OSC
@@ -97,11 +99,14 @@ fun void setSynthGain( float amp, int synthNum ) {
     synthEnvs[synthNum].keyOn();
 }
 
+fun void setSensorRanges() {
+    // sets globals whenever called
+    sensorRange + distOffset => thresh1; // where to cut off freq1
+    sensorRange + thresh1 + midBuffer => thresh2; // where to cut off freq2
+}
+
 fun void setAmpFromDistance(float dist) {
     // distOffset in globals can set for each sensor if irregularities too much
-    
-    sensorRange + distOffset => float thresh1; // where to cut off freq1
-    sensorRange + thresh1 + midBuffer => float thresh2; // where to cut off freq2
     
     <<< "stdSynth.ck /distance", dist, "RANGE 1:", distOffset, thresh1, "RANGE 2:", thresh1+midBuffer, thresh2, "RANGE 3:", thresh2, thresh2+20 >>>;
     // sensor vars
@@ -194,9 +199,15 @@ fun void oscListener() {
         if( msg.address == "/masterGain" ) msg.getFloat(0) => dac.gain;
         
         // distOffset
-        if( msg.address == "/distOffset" ) msg.getFloat(0) => distOffset;
+        if( msg.address == "/distOffset" ) {
+            msg.getFloat(0) => distOffset;
+            setSensorRanges();
+        }
         // sensorRange
-        if( msg.address == "/sensorRange" ) msg.getFloat(0) => sensorRange;
+        if( msg.address == "/sensorRange" ) {
+            msg.getFloat(0) => sensorRange;
+            setSensorRanges();
+        }
         
         // ONLY CHECK IF SYNTH STATE IS ON
         if( synthStates[0] == 1 || synthStates[1] == 1 ) {
@@ -224,6 +235,7 @@ fun void oscListener() {
 // MAIN LOOP
 // -----------------------------------------------------------------------------
 
+setSensorRanges();
 spork ~ oscListener();
 
 while( running ) {
