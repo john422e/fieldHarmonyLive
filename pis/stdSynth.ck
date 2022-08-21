@@ -110,7 +110,7 @@ fun void setAmpFromDistance(float dist) {
         // no synthNum comes in here, so have to check manually
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1 ) {
-                (amp*0.9) => synthEnvs[i].target;
+                amp => synthEnvs[i].target;
                 freqs1[i] => synths[i].freq;
                 spork ~ synthEnvs[i].keyOn();
             }
@@ -121,9 +121,10 @@ fun void setAmpFromDistance(float dist) {
     // RANGE 2: set to freq2 and set amp if value between thresh1 and thresh2
     else if( dist > thresh1 && dist < thresh2 ) {
         normalize(dist, thresh1, thresh2) => amp;
+        <<< fn, "sensorAmp", amp >>>;
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1) {
-                (amp*0.9) => synthEnvs[i].target;
+                amp => synthEnvs[i].target;
                 freqs2[i] => synths[i].freq;
                 spork ~ synthEnvs[i].keyOn();
             }
