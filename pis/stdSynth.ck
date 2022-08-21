@@ -103,12 +103,13 @@ fun void setSensorRanges() {
     // sets globals whenever called
     sensorRange + distOffset => thresh1; // where to cut off freq1
     sensorRange + thresh1 + midBuffer => thresh2; // where to cut off freq2
+    <<< "RANGE 1:", distOffset, thresh1, "RANGE 2:", thresh1+midBuffer, thresh2, "RANGE 3:", thresh2, thresh2+20 >>>;
 }
 
 fun void setAmpFromDistance(float dist) {
     // distOffset in globals can set for each sensor if irregularities too much
     
-    <<< "stdSynth.ck /distance", dist, "RANGE 1:", distOffset, thresh1, "RANGE 2:", thresh1+midBuffer, thresh2, "RANGE 3:", thresh2, thresh2+20 >>>;
+    <<< "stdSynth.ck /distance", dist >>>;
     // sensor vars
     
 
