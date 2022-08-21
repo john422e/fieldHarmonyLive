@@ -142,7 +142,7 @@ fun void setAmpFromDistance(float dist) {
     }
     
     // give a little head room for range 2
-    else if( dist > thresh2 && < (thresh2+20) {
+    else if( dist > thresh2 && dist < (thresh2+20) ) {
         1.0 => amp;
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1) {
@@ -153,6 +153,8 @@ fun void setAmpFromDistance(float dist) {
             }
             else synthEnvs[i].keyOff(); // turn off
         }
+    }
+    
     else { // go to min amp val
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1 ) {
