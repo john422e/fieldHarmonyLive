@@ -95,8 +95,8 @@ fun void setAmpFromDistance(float dist) {
     <<< "stdSynth.ck /distance", dist >>>;
     // sensor vars
     
-    15.0 => float thresh1;
-    30.0 => float thresh2;
+    10.0 => float thresh1;
+    20.0 => float thresh2;
     10.0 => float distOffset; // can set for each sensor if irregularities too much
     float amp;
     
