@@ -12,6 +12,7 @@ for Baldwin Hills Intonation, August/September 2022
 "stdSynth.ck" => string fn;
 int synth;
 0.0 => float minAmp; // for sound level when NOT boosted with sensor
+10.0 => float distOffset;
 
 // -----------------------------------------------------------------------------
 // OSC
@@ -92,12 +93,13 @@ fun void setSynthGain( float amp, int synthNum ) {
 }
 
 fun void setAmpFromDistance(float dist) {
+    // distOffset in globals can set for each sensor if irregularities too much
     <<< "stdSynth.ck /distance", dist >>>;
     // sensor vars
     
     10.0 => float thresh1;
     20.0 => float thresh2;
-    10.0 => float distOffset; // can set for each sensor if irregularities too much
+
     float amp;
     
     30 => int distSmoother; // val to feed normalize because minAmp is > 0
@@ -158,7 +160,7 @@ fun void oscListener() {
     in => now; // wait for a message
     while( in.recv(msg) ) {
         //<<< "stdSynth.ck", msg.address >>>;
-        // for every address but /distance, the first arg will be an int for the right synth number 
+        // for every address but /distance and /distOffset, the first arg will be an int for the right synth number 
         msg.getInt(0) => synth;
         
         // global synth state, arg = 0 or 1 for on/off
@@ -169,6 +171,9 @@ fun void oscListener() {
         
         // master gain
         if( msg.address == "/masterGain" ) msg.getFloat(0) => dac.gain;
+        
+        // distOffset
+        if( msg.address == "/distOffset" ) msg.getFloat(0) => distOffset;
         
         // ONLY CHECK IF SYNTH STATE IS ON
         if( synthStates[0] == 1 || synthStates[1] == 1 ) {
