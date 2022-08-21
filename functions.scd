@@ -87,8 +87,25 @@
 };
 
 // set synth params
+~setSensorOffset = {
+	arg hostsParams, address="/distOffset", vals = Array.fill(hostsParams.size, 10.0);
+	hostsParams.do( {
+		arg host, i;
+		host.sendMsg(address, vals[i]);
+	});
+};
+
+~setSensorRange = {
+	arg hostsParams, address="/sensorRange", val=5.0;
+	hostsParams.do( {
+		arg host;
+		[address, val].postln;
+		host.sendMsg(address, val);
+	});
+};
+
 ~setStdSynth = {
-	arg hostsParams, address, val1, val2;
+	arg hostsParams, address, val1=0, val2=0;
 	hostsParams.do( {
 		arg host;
 		host.sendMsg(address, val1, val2);

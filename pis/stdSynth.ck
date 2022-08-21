@@ -119,6 +119,7 @@ fun void setAmpFromDistance(float dist) {
     // RANGE 1: set to freq1 and set amp if value between 0 and thresh1
     if( dist < thresh1 && dist > 0.0 ) {
         normalize(dist, thresh1, distOffset) => amp;
+        amp*0.9 => amp; // back it off a bit
         
         // no synthNum comes in here, so have to check manually
         for( 0 => int i; i < numSynths; i++ ) {
@@ -135,6 +136,7 @@ fun void setAmpFromDistance(float dist) {
     // RANGE 2: set to freq2 and set amp if value between thresh1 and thresh2
     else if( dist > thresh1 && dist < thresh2 ) {
         normalize(dist, thresh1+midBuffer, thresh2) => amp;
+        amp*0.9 => amp; // back it off a bit
         
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1) {
@@ -150,6 +152,8 @@ fun void setAmpFromDistance(float dist) {
     // give a little head room for range 2
     else if( dist > thresh2 && dist < (thresh2+(sensorRange*2)) ) {
         1.0 => amp;
+        amp*0.9 => amp; // back it off a bit
+        
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1) {
                 <<< fn, "RANGE 3", freqs2[i], amp >>>;

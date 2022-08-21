@@ -28,6 +28,7 @@ p.close;
 
 
 // 3. SET UP SOUND STUFF
+s.quit;
 (
 
 ServerOptions.devices;
@@ -35,6 +36,7 @@ Server.default.options.inDevice_("H5"); // stereo input
 //Server.default.options.inDevice_("MacBook Pro Microphone"); // mono input
 //Server.default.options.outDevice_("External Headphones");
 Server.default.options.outDevice_("Scarlett 2i2 USB");
+Server.default.options.sampleRate_(48000);
 
 s.waitForBoot( { // boot server
 	// ADD SYNTHS TO SERVER
@@ -174,7 +176,7 @@ OSCdef.new(
 // 7. START UP PIs: sensorSender.ck and stdSynth.ck
 (
 // start up sensor programs
-~sensorInit.(~hostsMaster, ~hostsParams);
+~sensorInit.(~hostsMaster, ~hostsParams);  // TO RESET SENSOR DO THIS AND ~pingSensors block
 )
 
 (
@@ -183,17 +185,25 @@ OSCdef.new(
 );
 
 (
-// initiate synth settings
-~setStdSynth.(~hostsParams, "/stdSynthState", 0, 1); // turn on chan 1
+// initiate synth settings and start pinging
+~pingSensors.(~hostsParams);
+~setSensorOffset.(~hostsParams, vals: [12.0, 4.0]);
+~setSensorRange.(~hostsParams, val: 5.0);
 )
 
-// not sure if i need this stuff
-~pingSensors.();
-~setStdSynth.(~hostsParams, "/synthFreq", 0, 133.0);
+(
+~setStdSynth.(~hostsParams, "/stdSynthState", 0, 1); // turn on chan 1
+
+~setStdSynth.(~hostsParams, "/synthFreq1", 0, 440.0);
+~setStdSynth.(~hostsParams, "/synthFreq2", 0, 330.0);
+)
 
 // SHUT IT DOWN
+(
+~unpingSensors.(~hostsParams);
 ~stdSynthSwitch.(~hostsMaster, state: 0);
 ~sensorShutdown.(~hostsMaster, ~hostsParams);
+)
 ~shutdownRemoteServer.(~hostsMaster);
 
 
@@ -279,14 +289,14 @@ x = Task{
 
 		// ----------------------------------------------------------------------------
 		// NOW UPDATE PIS
-		// make sure it's on
-		~piHosts[0].sendMsg('/stdSynthState', 0, 1); // first into for channel (l/r), second for on/off
-		//~piHosts[0].sendMsg('/stdSynthState', 0, 0);
-		// set freq
-		~piHosts[0].sendMsg('/synthFreq', 0, ~freqs1.choose); // random choice for now
-		// full gain for now without sensor
-		//~piHosts[0].sendMsg('/synthGain', 0, 0.0);
-		~piHosts[0].sendMsg('/synthGain', 0, 0.8);
+		// pi 1, freqs 1 and 2
+		~hostsParams[0].sendMsg('/synthFreq1', 0, ~freqs1.takeAt(rand(~freqs1.size)));
+		~hostsParams[0].sendMsg('/synthFreq2', 0, ~freqs1.takeAt(rand(~freqs1.size)));
+		// pi 2, freqs 1 and 2
+		~hostsParams[1].sendMsg('/synthFreq1', 0, ~freqs2.takeAt(rand(~freqs2.size)));
+		~hostsParams[1].sendMsg('/synthFreq2', 0, ~freqs2.takeAt(rand(~freqs2.size)));
+
+
 
 
 
@@ -301,12 +311,14 @@ x = Task{
 	~sines2.set(\gate, 0);
 }.start;
 )
-
+a = [1, 2, 3, 4, 5];
+c = a.choose;
+b = a.takeAt(rand(a.size));
+a;
 // USE THIS FOR STOPPING
 x.stop;
+s.quit;
 
-// EMERGENCY OFF
-~piHosts[0].sendMsg('/synthGain', 0, 0.0);
 
 s.scope;
 s.freqscope;
