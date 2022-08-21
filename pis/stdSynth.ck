@@ -11,7 +11,7 @@ for Baldwin Hills Intonation, August/September 2022
 1 => int running;
 "stdSynth.ck" => string fn;
 int synth;
-0.2 => float minAmp; // for sound level when NOT boosted with sensor
+0.0 => float minAmp; // for sound level when NOT boosted with sensor
 
 // -----------------------------------------------------------------------------
 // OSC
@@ -32,6 +32,8 @@ int synthStates[numSynths]; // set to 0 when not using, 1 turns on
 
 Blit synths[numSynths];
 Envelope synthEnvs[numSynths];
+float freqs1[numSynths];
+float freqs2[numSynths];
 
 // sound chains
 for( 0 => int i; i < numSynths; i++ ) {
@@ -39,6 +41,8 @@ for( 0 => int i; i < numSynths; i++ ) {
     0 => synthStates[i];
     // default to sine tone
     1 => synths[i].harmonics;
+    220.0 => freqs1[i];
+    330.0 => freqs2[i];
     synths[i] => synthEnvs[i] => dac.chan(i);
 }
 
@@ -91,27 +95,42 @@ fun void setAmpFromDistance(float dist) {
     //<<< "stdSynth.ck /distance", dist >>>;
     // sensor vars
     
-    100.0 => float thresh;
+    100.0 => float thresh1;
+    200.0 => float thresh2;
     10.0 => float distOffset; // can set for each sensor if irregularities too much
     float amp;
     
     30 => int distSmoother; // val to feed normalize because minAmp is > 0
     
     
-    // turn on sound if value below thresh
-    if( dist < thresh && dist > 0.0 ) {
-        normalize(dist, thresh+distSmoother, distOffset) => amp;
+    // RANGE 1: set to freq1 and set amp if value between 0 and thresh1
+    if( dist < thresh1 && dist > 0.0 ) {
+        normalize(dist, thresh1+distSmoother, distOffset) => amp;
         <<< fn, "sensorAmp", amp >>>;
         // no synthNum comes in here, so have to check manually
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1 ) {
-                if( i == 0 ) amp*1.5 => amp; // only for transducers, double amp
                 (amp*0.9) => synthEnvs[i].target;
+                freqs1[i] => synths[i].freq;
                 spork ~ synthEnvs[i].keyOn();
             }
             else synthEnvs[i].keyOff(); // turn off
         }
     }
+    
+    // RANGE 2: set to freq2 and set amp if value between thresh1 and thresh2
+    else if( dist > thresh1 && dist < thresh2 ) {
+        normalize(dist, thresh1, thresh2) => amp;
+        for( 0 => int i; i < numSynths; i++ ) {
+            if( synthStates[i] == 1) {
+                (amp*0.9) => synthEnvs[i].target;
+                freqs2[i] => synths[i].freq;
+                spork ~ synthEnvs[i].keyOn();
+            }
+            else synthEnvs[i].keyOff(); // turn off
+        }
+    }
+    
     else { // go to min amp val
         for( 0 => int i; i < numSynths; i++ ) {
             if( synthStates[i] == 1 ) {
@@ -160,7 +179,8 @@ fun void oscListener() {
             if( msg.address == "/synthOn") synthEnvs[synth].keyOn();
             if( msg.address == "/synthOff") synthEnvs[synth].keyOff();
             // synth freq/harmonics
-            if( msg.address == "/synthFreq") msg.getFloat(1) => synths[synth].freq;
+            if( msg.address == "/synthFreq1") msg.getFloat(1) => freqs1[synth];
+            if( msg.address == "/synthFreq2") msg.getFloat(1) => freqs2[synth];
             if( msg.address == "/synthHarmonics") msg.getInt(1) => synths[synth].harmonics;
             // gain
             if( msg.address == "/synthGain") setSynthGain(msg.getFloat(1), synth);
