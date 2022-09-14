@@ -20,7 +20,7 @@ TO RUN: add code blocks 1-4, then run analyzeSample.py from terminal (5), server
 // 8. START PROGRAM
 (
 // MAIN
-var cwd, temps, recs, sampleDur=2.0, recBufTime=1.0, pingBufTime=0.0, cycleRemainder, totalFreqs=~numSines;
+var cwd, temps, recs, sampleDur=1.0, recBufTime=1.0, pingBufTime=0.0, extraLag=0.0, cycleRemainder, totalFreqs=~numSines;
 
 // ----------------------------------------------------------------------------
 
@@ -44,6 +44,9 @@ t = TempoClock.new();
 x = Task{
 	~sections.do{
 		arg dur, i;
+
+		"TOP".postln;
+		[dur, i].postln;
 
 		2.do ( // alternate going between the 2 channels
 			{
@@ -71,7 +74,7 @@ x = Task{
 				recs[chan].stopRecording;
 				//recs.do( { arg rec; rec.stopRecording});
 
-				recBufTime.do{ format("STOPPED RECORDING, TIME:\t\t % minutes, % seconds", (t.beats/60).asInteger, (t.beats%60).asInteger).postln; 1.wait};
+				1.do{ format("STOPPED RECORDING, TIME:\t\t % minutes, % seconds", (t.beats/60).asInteger, (t.beats%60).asInteger).postln; recBufTime.wait};
 
 
 				// 3. PING PYTHON PROGRAM FOR FREQS
@@ -153,7 +156,7 @@ x.stop;
 
 
 ~localHost.sendMsg('/shutdown');
-~localHost.sendMsg('/ping', 0);
+~localHost.sendMsg('/ping', 1);
 
 
 

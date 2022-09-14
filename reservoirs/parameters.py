@@ -36,7 +36,7 @@ params = {
 'high pass': 100,
 'low pass': 10000,
 'hz boundary': 0.5, # 5% .005, # 0.5%
-'clear harmonics': [1],#[1, 2, 4, 8, 16], # harmonics of frequency to filter for
+'clear harmonics': [2],#[1, 2, 4, 8, 16], # harmonics of frequency to filter for
 'total peaks': 0,
 # harmonic analysis params
 'denominator limit': 128, # resolution

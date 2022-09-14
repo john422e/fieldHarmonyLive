@@ -18,65 +18,47 @@ OSCdef.new(
 	// function to be evaluated upon receiving qualifying OSC message
 	{
 		arg msg, time, addr, port; // these are the messages passed on
-		var chan, data, numLists, cleaned, midpoint, rcvLists;
-		[msg, time, addr, port].postln; // action to be executed
+		var chan, data, numLists, cleaned, amps, freqs, rcvLists;
+		//[msg, time, addr, port].postln; // action to be executed
 		msg.removeAt(0); // get rid of tag beginning
 		//["RCVD:", msg].postln;
 
-		msg.postln;
+		//msg.postln;
 
 		chan = msg[0];
 
 		msg.removeAt(0);
 
-		msg.postln;
+		//msg.postln;
 
 
 
 		// clean list of strings
 		cleaned = msg.select( { arg i; i.isNumber }); // makes one long list
-		"CLEANED".postln;
+		//"CLEANED".postln;
+		//cleaned.postln;
+		//cleaned.size.postln;
 
-		cleaned.postln;
-
-		// don't really need all this subList stuff now....
-		subListSize = ~numSines * 2; // how long the combined list of freqs and amps should be
-		numLists = cleaned.size / subListSize;
-
-
-		format("NUM LISTS: %", numLists).postln;
-		format("SUBLIST SIZE: %", subListSize).postln;
-
-		cleaned.postln;
-		cleaned.size.postln;
-
-		numLists.do( {
-			arg i;
-			var start_i, end_i, sourceParsed, amps, freqs;
-
-			start_i=(i*(subListSize)).asInteger;
-			end_i=start_i+(subListSize-1);
-			sourceParsed = cleaned[start_i..end_i]; // one list of [amp, freq, ...]
-			amps = Array.new(~numSines);
-			freqs = Array.new(~numSines);
-			format("NUM SINES: %", ~numSines).postln;
-			sourceParsed.do( {
-				// split out amps and freqs into separate lists
-				arg val, i;
-				if( i % 2 == 0, { amps.add(val) }, { freqs.add(val) });
-			});
-			amps = amps.normalizeSum();
-			["SUMMED", amps.sum].postln;
-
-			format("NUM SINES: %", ~numSines).postln;
-			format("NUM FREQS: %", freqs.size).postln;
-
-			// add it to the master list
-			//~currentData[i] = [amps, freqs];
-			//["PARSED", i, amps, freqs].postln;
-
+		amps = Array.new(~numSines);
+		freqs = Array.new(~numSines);
+		//format("NUM SINES: %", ~numSines).postln;
+		cleaned.do( {
+			// split out amps and freqs into separate lists
+			arg val, i;
+			if( i % 2 == 0, { amps.add(val) }, { freqs.add(val) });
 		});
-		~currentData[chan] =
+		amps = amps.normalizeSum();
+		//["SUMMED", amps.sum].postln;
+
+		//format("NUM SINES: %", ~numSines).postln;
+		//format("NUM FREQS: %", freqs.size).postln;
+
+		// add it to the master list
+		//~currentData[i] = [amps, freqs];
+		//["PARSED", i, amps, freqs].postln;
+
+		~currentData[chan] = [amps, freqs];
+		format("UPDATED CHAN % : % %", chan, amps, freqs).postln;
 
 
 	},

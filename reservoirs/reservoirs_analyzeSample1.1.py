@@ -56,7 +56,7 @@ def analyzeSample(chan):
     print("ANALYZING", wavFile)
     wave = thinkdsp.read_wave(wavFile)
     #print("HERE")
-    wave.apodize()
+    #wave.apodize()
     spectrum = wave.make_spectrum()
     peaks = spectrum.peaks()
 
