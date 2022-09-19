@@ -1,4 +1,4 @@
-// FUNCTIONS FOR BHI_main.scd
+// FUNCTIONS FOR reservoirs_main.scd
 (
 // MAKE SINGLE HOST
 ~makeHost = {

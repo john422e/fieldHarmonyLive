@@ -20,7 +20,7 @@ TO RUN: add code blocks 1-4, then run analyzeSample.py from terminal (5), server
 // 8. START PROGRAM
 (
 // MAIN
-var cwd, temps, recs, sampleDur=1.0, recBufTime=1.0, pingBufTime=0.0, extraLag=0.0, cycleRemainder, totalFreqs=~numSines;
+var cwd, temps, recs, r3, sampleDur=1.0, recBufTime=1.0, pingBufTime=0.0, extraLag=0.0, cycleRemainder, totalFreqs=~numSines;
 
 // ----------------------------------------------------------------------------
 
@@ -36,12 +36,21 @@ recs = Array.fill( ~numSources, {
 	recorder;
 });
 
+// DOCUMENTATION
+r3 = Recorder(s);
+r3.recHeaderFormat_('wav');
+r3.recSampleFormat_("int16");
+
 
 // for display
 t = TempoClock.new();
 
 // MAIN LOOP, DETERMINED BY totalCycles
 x = Task{
+
+	// START DOCUMENTATION RECORDER
+	r3.record(cwd ++ Date.getDate.stamp ++ "performance.wav", s, 2);
+
 	~sections.do{
 		arg dur, i;
 
@@ -129,13 +138,18 @@ x = Task{
 
 	// shutdown python server when finished
 	~localHost.sendMsg('/shutdown');
-	// kill synth with fade out
 
+	// kill synth with fade out
 	~sines.do( {
 		arg synth;
 		synth.set(\release, 30);
 		synth.set(\gate, 0);
 	});
+
+	// stop recording
+	// but wait 60 seconds first
+	60.do({ arg i; format("COUNT DOWN: %", (60-i)).postln; 1.wait;});
+	r3.stopRecording;
 
 
 }.start;

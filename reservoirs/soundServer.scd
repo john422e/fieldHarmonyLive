@@ -11,8 +11,9 @@ o.sampleRate_(48000);
 o.inDevice_("Scarlett 2i2 USB");
 //o.inDevice_("Soundflower (2ch)");
 //o.outDevice_("External Headphones");
-o.outDevice_("Soundflower (2ch)");
+//o.outDevice_("Soundflower (2ch)");
 //o.outDevice_("Scarlett 18i20 USB");
+o.outDevice_("Scarlett 2i2 USB");
 
 
 //ServerOptions.devices;
